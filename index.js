@@ -11,7 +11,7 @@ const persAPI = '/api/persons';
 app.use(cors());
 app.use(express.static('build'));
 app.use(express.json());
-morgan.token('jsonBody', (req, res) => JSON.stringify(req.body));
+morgan.token('jsonBody', (req) => JSON.stringify(req.body));
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :jsonBody'));
 
 app.get(persAPI, (req, res) => {
@@ -25,13 +25,13 @@ app.get(`${persAPI}/:id`, (req, res) => {
 			res.sendStatus(404);
 		else
 			res.json(p);
-	}).catch(err => res.status(500).end());
+	}).catch(() => res.status(500).end());
 });
 
 app.delete(`${persAPI}/:id`, (req, res, next) => {
 	const id = req.params.id;
 
-	Person.findByIdAndRemove(id).then(result =>
+	Person.findByIdAndRemove(id).then(() =>
 		res.status(204).end()
 	).catch(err => next(err));
 });
@@ -46,6 +46,7 @@ app.post(persAPI, (req, res, next) => {
 	return;
 
 	// code prior to mongoDB adoption
+	/*
 	const id = Math.floor(Math.random() * 1000000000);
 	const newPers = {...req.body, id};
 
@@ -59,6 +60,7 @@ app.post(persAPI, (req, res, next) => {
 
 	persons.push(newPers);
 	res.json(newPers);
+	*/
 });
 
 app.put(`${persAPI}/:id`, (req, res, next) => {
@@ -70,14 +72,14 @@ app.put(`${persAPI}/:id`, (req, res, next) => {
 	Person.findByIdAndUpdate(id, pers, { new: true, runValidators:true, context:'query' })
 		.then(updatedPers => res.json(updatedPers))
 		.catch(error => next(error));
-})
+});
 
 app.get('/info', (req, res) => {
 	const date= new Date().toString();
 	Persons.find({}).then (result => {
 		res.set('Content-Type', 'text/plain');
 		res.send(
-`Phonebook has info for ${result.length} people
+			`Phonebook has info for ${result.length} people
 
 ${date}`
 		);
@@ -86,25 +88,25 @@ ${date}`
 
 const notFound = (req, res) => {
 	res.sendStatus(404);
-}
+};
 
 app.use(notFound);
 
 const errorHandler = (error, req, res, next) => {
-  console.error(error.message);
+	console.error(error.message);
 
-  if (error.name === 'CastError')
-	return res.status(400).send({ error: 'malformatted id' });
-  else if (error.name === 'ValidationError')
-	return res.status(400).json({error: error.message});
+	if (error.name === 'CastError')
+		return res.status(400).send({ error: 'malformatted id' });
+	else if (error.name === 'ValidationError')
+		return res.status(400).json({error: error.message});
 
 	res.sendStatus(500);
 
-  next(error);
-}
+	next(error);
+};
 
 app.use(errorHandler);
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`)
+	console.log(`Server running on port ${PORT}`);
 });
