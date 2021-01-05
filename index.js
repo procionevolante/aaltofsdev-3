@@ -67,7 +67,7 @@ app.put(`${persAPI}/:id`, (req, res, next) => {
 	const number = req.body.number;
 	const pers = {name, number};
 
-	Person.findByIdAndUpdate(id, pers, { new: true })
+	Person.findByIdAndUpdate(id, pers, { new: true, runValidators:true, context:'query' })
 		.then(updatedPers => res.json(updatedPers))
 		.catch(error => next(error));
 })
@@ -90,15 +90,17 @@ const notFound = (req, res) => {
 
 app.use(notFound);
 
-const errorHandler = (error, request, response, next) => {
-  console.error(error.message)
+const errorHandler = (error, req, res, next) => {
+  console.error(error.message);
 
-  if (error.name === 'CastError') {
-    return response.status(400).send({ error: 'malformatted id' })
-  } 
+  if (error.name === 'CastError')
+	return res.status(400).send({ error: 'malformatted id' });
+  else if (error.name === 'ValidationError')
+	return res.status(400).json({error: error.message});
 
-	response.sendStatus(500);
-  next(error)
+	res.sendStatus(500);
+
+  next(error);
 }
 
 app.use(errorHandler);
